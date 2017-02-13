@@ -1,67 +1,13 @@
-import requests
-import json
 import pickle
-from requests.packages.urllib3.util.retry import Retry
-from requests.adapters import HTTPAdapter
-import os
 
-try:
-    from BeautifulSoup import BeautifulSoup
-except ImportError:
-    from bs4 import BeautifulSoup
-
-# URLS
-dataSetUrl = "https://isic-archive.com:443/api/v1/dataset?limit=0&offset=0&sort=name&sortdir=1"
-imageSetBaseUrl = "https://isic-archive.com:443/api/v1/image?limit=0&offset=0&sort=name&sortdir=1"
-imageDownloadBaseUrl = "https://isic-archive.com:443/api/v1/image/"
-imageDetailsDownloadBaseUrl = "https://isic-archive.com:443/api/v1/image/"
-
-imageIdClassMapPkl = "imageIdClassMap.pkl"
+from networkUtil import *
+from diskUtil import *
+from config import *
 
 #map containing the image id and the class
 imageIdClassMap = {}
 #map containing the dataset and the list of image ids in it
 datasetImageIdMap = {}
-
-requestSession = None
-
-def initializeRequestSession():
-    global requestSession
-    requestSession = requests.Session()
-    retries = Retry(total=5,
-                    backoff_factor=0.1,
-                    status_forcelist=[500, 502, 503, 504])
-    requestSession.mount('http://', HTTPAdapter(max_retries=retries))
-    requestSession.mount('https://', HTTPAdapter(max_retries=retries))
-
-def getPostRequest(reqUrl,payLoad={}):
-    return requestSession.post(reqUrl, data=payLoad)
-
-def getGetRequest(reqUrl,payLoad={}):
-    return requestSession.get(reqUrl, data=payLoad)
-
-def getTheUrl(reqUrl,payLoad={}):
-    try:
-        req = getGetRequest(reqUrl,payLoad)
-        return parseRequest(req)
-    except Exception as e:
-        print str(e)
-        raise e
-
-def postTheUrl(reqUrl,payLoad={}):
-    try:
-        req = getPostRequest(reqUrl,payLoad)
-        return parseRequest(req)
-    except Exception as e:
-        print str(e)
-        raise e
-
-def parseRequest(req):
-    try:
-        data = json.loads(req.text)
-        return data
-    except Exception as e:
-        raise e
 
 def extractImageIdsFromUrl(imageSetUrl):
     imageIds = []
@@ -89,7 +35,7 @@ def extractImageIdsOfAllDatasets():
         print "DataSet Id:Number of Images "+str(dataSetId)+":"+str(len(imageIds))
     print "Pickling the dataset image map..."
     # Output Files
-    dataSetImageIdMapFileHandle = open("dataSetImageIdMap.pkl", 'wb')
+    dataSetImageIdMapFileHandle = open(datasetImageIdMapPkl, 'wb')
     dataSetImageIdMapFileHandle.truncate()
     pickle.dump(datasetImageMap, dataSetImageIdMapFileHandle)
     print "Pickling Done..."
@@ -113,8 +59,6 @@ def getImageClass(imageId):
         print "ERROR: while extracting the class for an image"+str(e)
         return "_Fetch_Error_"
 
-#def checkIfImageAlreadyDownloaded(imageId):
-
 def fetchAndPickleClassesForImage(imageIds):
     print "Fetching Classes For ImageIds..."
     classFetchesLogFile = open("classes_fetching_logs.txt", 'w')
@@ -135,19 +79,12 @@ def fetchAndPickleClassesForImage(imageIds):
     pickle.dump(imageIdClassMap, imageIdClassMapFileHandle)
     print "Pickled Classes  For ImageIds..."
 
-def findClassesOfTheImages():
+def fetchImagesMetadata():
     initializeDataSetImageIdMap()
     allImageIds = []
     for dataSetId,imageIds in datasetImageIdMap.iteritems():
         allImageIds.extend(imageIds)
     fetchAndPickleClassesForImage(allImageIds)
-
-def createDirectory(dirName):
-    if not os.path.exists(dirName):
-        os.makedirs(dirName)
-
-def fileExists(filePath):
-    return os.path.isfile(filePath)
 
 def getImageDestinationPath(dataSetId,imageClass,imageId):
     return dataSetId+"/"+imageClass+"/" + imageId + ".jpg"
@@ -166,29 +103,27 @@ def downloadImage(dataSetId,imageId):
         return True
 
     print "Downloading Image:"+imageId
-    imageDownloadUrl = imageDownloadBaseUrl+imageId+"/download"
-
     try:
         imageClass = getImageClass(imageId)
         createDirectory(dataSetId+"/"+imageClass)
         destinationPath = getImageDestinationPath(dataSetId,imageClass,imageId)
-        f = open(destinationPath, 'wb')
-        imageContent = requestSession.get(imageDownloadUrl).content
+        imageDownloadUrl = imageDownloadBaseUrl + imageId + "/download"
+        imageContent = getImageContent(imageDownloadUrl)
         if(imageContent is None):
             print "Download of Image:"+imageId+" failed..."
             return False
-        f.write(imageContent)
-        f.close()
+        else:
+            saveImage(imageContent,destinationPath)
         print "Downloaded Image:"+imageId
         return True
     except Exception as e:
-        print "Download of Image:"+imageId+" failed..."
+        print "Download of Image:"+imageId+" failed..."+str(e)
         return False
 
 def initializeDataSetImageIdMap():
     global datasetImageIdMap
     if(len(datasetImageIdMap)==0):
-        dataSetImageIdMapFileHandle = open("dataSetImageIdMap.pkl", 'rb')
+        dataSetImageIdMapFileHandle = open(datasetImageIdMapPkl, 'rb')
         datasetImageIdMap = pickle.load(dataSetImageIdMapFileHandle)
 
 def initializeImageIdClassMap():
@@ -203,24 +138,25 @@ def downloadImages():
     initializeImageIdClassMap()
 
     for dataSetId,imageIds in datasetImageIdMap.iteritems():
-        if(dataSetId!="54ea816fbae47871b5e00c80"):
+        if(dataSetId!="5627eefe9fc3c132be08d84c"):
             continue
         print "Downloading Images for Dataset:"+dataSetId
         totalImagesInDataSet = len(imageIds)
         imagesDownloadedSuccessFully = 0
-        failedDownloads = open(dataSetId+"_failed.txt", 'w')
+        createDirectory(dataSetId)
+        failedDownloads = open(dataSetId+"/"+dataSetId+"_failed.txt", 'w')
+        failedDownloads.truncate()
+        imageIndxProcessed = 0
         for imageId in imageIds:
+            imageIndxProcessed = imageIndxProcessed + 1
             if(downloadImage(dataSetId,imageId)):
                 imagesDownloadedSuccessFully = imagesDownloadedSuccessFully +1
             else:
                 failedDownloads.write(imageId)
                 failedDownloads.write("\n")
+            print "Processing Image:"+str(imageIndxProcessed)+"/"+str(totalImagesInDataSet)
         failedDownloads.close()
         print str(imagesDownloadedSuccessFully)+" images downloaded out of "+str(totalImagesInDataSet) +" for the dataset "+str(dataSetId)
         return
         print "Downloaded the images for the dataset:"+dataSetId
 
-initializeRequestSession()
-#extractImageIdsOfAllDatasets()
-#findClassesOfTheImages()
-downloadImages()
