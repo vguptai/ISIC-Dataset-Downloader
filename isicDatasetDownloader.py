@@ -155,6 +155,7 @@ def downloadImages():
                 failedDownloads.write(imageId)
                 failedDownloads.write("\n")
             print "Processing Image:"+str(imageIndxProcessed)+"/"+str(totalImagesInDataSet)
+        failedDownloads.write(str(imagesDownloadedSuccessFully)+" images downloaded out of "+str(totalImagesInDataSet) +" for the dataset "+str(dataSetId))
         failedDownloads.close()
         print str(imagesDownloadedSuccessFully)+" images downloaded out of "+str(totalImagesInDataSet) +" for the dataset "+str(dataSetId)
         return
