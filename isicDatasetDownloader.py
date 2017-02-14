@@ -138,8 +138,8 @@ def downloadImages():
     initializeImageIdClassMap()
 
     for dataSetId,imageIds in datasetImageIdMap.iteritems():
-        if(dataSetId!="5627eefe9fc3c132be08d84c"):
-            continue
+        #if(dataSetId!="5627eefe9fc3c132be08d84c"):
+        #    continue
         print "Downloading Images for Dataset:"+dataSetId
         totalImagesInDataSet = len(imageIds)
         imagesDownloadedSuccessFully = 0
@@ -159,4 +159,3 @@ def downloadImages():
         print str(imagesDownloadedSuccessFully)+" images downloaded out of "+str(totalImagesInDataSet) +" for the dataset "+str(dataSetId)
         return
         print "Downloaded the images for the dataset:"+dataSetId
-
