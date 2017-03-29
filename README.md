@@ -6,11 +6,13 @@ The basic steps that I have followed are:
 
 Step 1) Get all the dataset ids present in the project and get all the image ids for these datasets. 
 
-Step 2) Fetch the metadata of the images (mainly the class to which the image belongs). The image ids and corresponding classes are pickled for the next step.
+Fetch the metadata of the images (mainly the class to which the image belongs). The image ids and corresponding classes are pickled for the next step.
+
+The following command does this.
 
 python downloadImageMetaData.py
 
-Step 3) Download the images of the dataset. Reads the pickled files from the above step to get the imageIds and class information and downloads the images. In case the script fails, it can be run again. The already downloaded images will remain intact and will not be downloaded again.
+Step 2) In this atep we download the images of the datasets. The cript reads the pickled files from the above step to get the imageIds and their class information to download and save the image in the correct location. In case the script fails, it can be run again. The already downloaded images will remain intact and will not be downloaded again.
 
 python downloadImages.py
 
