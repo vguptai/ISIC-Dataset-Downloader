@@ -158,5 +158,4 @@ def downloadImages():
         failedDownloads.write(str(imagesDownloadedSuccessFully)+" images downloaded out of "+str(totalImagesInDataSet) +" for the dataset "+str(dataSetId))
         failedDownloads.close()
         print str(imagesDownloadedSuccessFully)+" images downloaded out of "+str(totalImagesInDataSet) +" for the dataset "+str(dataSetId)
-        return
         print "Downloaded the images for the dataset:"+dataSetId
