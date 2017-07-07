@@ -24,27 +24,27 @@ def extractDatasetList():
     return dataSetIds
 
 def extractImageIdsOfAllDatasets():
-    print "Extracting DataSet List..."
+    print("Extracting DataSet List...")
     dataSetIds = extractDatasetList()
-    print "DataSet Ids..."+str(dataSetIds)
+    print("DataSet Ids..."+str(dataSetIds))
     datasetImageMap = {}
     for dataSetId in dataSetIds:
         imageSetFullUrl = imageSetBaseUrl+"&datasetId="+dataSetId
         datasetImageMap[dataSetId] = extractImageIdsFromUrl(imageSetFullUrl)
-    for dataSetId,imageIds in datasetImageMap.iteritems():
-        print "DataSet Id:Number of Images "+str(dataSetId)+":"+str(len(imageIds))
-    print "Pickling the dataset image map..."
+    for dataSetId,imageIds in datasetImageMap.items():
+        print("DataSet Id:Number of Images "+str(dataSetId)+":"+str(len(imageIds)))
+    print("Pickling the dataset image map...")
     # Output Files
     dataSetImageIdMapFileHandle = open(datasetImageIdMapPkl, 'wb')
     dataSetImageIdMapFileHandle.truncate()
     pickle.dump(datasetImageMap, dataSetImageIdMapFileHandle)
-    print "Pickling Done..."
+    print("Pickling Done...")
     dataSetImageIdMapFileHandle.close()
     return datasetImageMap
 
 def getImageClass(imageId):
 
-    if(imageIdClassMap.has_key(imageId)):
+    if imageId in imageIdClassMap:
         return imageIdClassMap.get(imageId)
 
     imageDetailsDownloadUrl = imageDetailsDownloadBaseUrl+imageId
@@ -56,33 +56,33 @@ def getImageClass(imageId):
         else:
             return imageClass
     except Exception as e:
-        print "ERROR: while extracting the class for an image"+str(e)
+        print("ERROR: while extracting the class for an image"+str(e))
         return "_Fetch_Error_"
 
 def fetchAndPickleClassesForImage(imageIds):
-    print "Fetching Classes For ImageIds..."
+    print("Fetching Classes For ImageIds...")
     classFetchesLogFile = open("classes_fetching_logs.txt", 'w')
     classFetchesLogFile.truncate()
     count = 0
     totalCount = len(imageIds)
     for imageId in imageIds:
         count = count + 1
-        print str(count)+"/"+str(totalCount)
+        print(str(count)+"/"+str(totalCount))
         imageClass = getImageClass(imageId)
         imageIdClassMap[imageId] = imageClass
         classFetchesLogFile.write("Fetched Class:"+imageClass+" for ImageId:"+imageId)
         classFetchesLogFile.write("\n")
     classFetchesLogFile.close()
-    print "Pickling Classes For ImageIds..."
+    print("Pickling Classes For ImageIds...")
     imageIdClassMapFileHandle = open(imageIdClassMapPkl, 'wb')
     imageIdClassMapFileHandle.truncate()
     pickle.dump(imageIdClassMap, imageIdClassMapFileHandle)
-    print "Pickled Classes  For ImageIds..."
+    print("Pickled Classes  For ImageIds...")
 
 def fetchImagesMetadata():
     initializeDataSetImageIdMap()
     allImageIds = []
-    for dataSetId,imageIds in datasetImageIdMap.iteritems():
+    for dataSetId,imageIds in datasetImageIdMap.items():
         allImageIds.extend(imageIds)
     fetchAndPickleClassesForImage(allImageIds)
 
@@ -93,7 +93,7 @@ def imageAlreadyDownloaded(dataSetId,imageId):
     imageClass = getImageClass(imageId)
     destinationPath = getImageDestinationPath(dataSetId,imageClass, imageId)
     if (fileExists(destinationPath)):
-        print "Image already present, so not downloading it again:" + imageId
+        print("Image already present, so not downloading it again:" + imageId)
         return True
     return False
 
@@ -102,7 +102,7 @@ def downloadImage(dataSetId,imageId):
     if(imageAlreadyDownloaded(dataSetId,imageId)):
         return True
 
-    print "Downloading Image:"+imageId
+    print("Downloading Image:"+imageId)
     try:
         imageClass = getImageClass(imageId)
         createDirectory(dataSetId+"/"+imageClass)
@@ -110,14 +110,14 @@ def downloadImage(dataSetId,imageId):
         imageDownloadUrl = imageDownloadBaseUrl + imageId + "/download"
         imageContent = getImageContent(imageDownloadUrl)
         if(imageContent is None):
-            print "Download of Image:"+imageId+" failed..."
+            print("Download of Image:"+imageId+" failed...")
             return False
         else:
             saveImage(imageContent,destinationPath)
-        print "Downloaded Image:"+imageId
+        print("Downloaded Image:"+imageId)
         return True
     except Exception as e:
-        print "Download of Image:"+imageId+" failed..."+str(e)
+        print("Download of Image:"+imageId+" failed..."+str(e))
         return False
 
 def initializeDataSetImageIdMap():
@@ -137,10 +137,10 @@ def downloadImages():
     initializeDataSetImageIdMap()
     initializeImageIdClassMap()
 
-    for dataSetId,imageIds in datasetImageIdMap.iteritems():
+    for dataSetId,imageIds in datasetImageIdMap.items():
         #if(dataSetId!="5627eefe9fc3c132be08d84c"):
         #    continue
-        print "Downloading Images for Dataset:"+dataSetId
+        print("Downloading Images for Dataset:"+dataSetId)
         totalImagesInDataSet = len(imageIds)
         imagesDownloadedSuccessFully = 0
         createDirectory(dataSetId)
@@ -154,8 +154,8 @@ def downloadImages():
             else:
                 failedDownloads.write(imageId)
                 failedDownloads.write("\n")
-            print "Processing Image:"+str(imageIndxProcessed)+"/"+str(totalImagesInDataSet)
+            print("Processing Image:"+str(imageIndxProcessed)+"/"+str(totalImagesInDataSet))
         failedDownloads.write(str(imagesDownloadedSuccessFully)+" images downloaded out of "+str(totalImagesInDataSet) +" for the dataset "+str(dataSetId))
         failedDownloads.close()
-        print str(imagesDownloadedSuccessFully)+" images downloaded out of "+str(totalImagesInDataSet) +" for the dataset "+str(dataSetId)
-        print "Downloaded the images for the dataset:"+dataSetId
+        print(str(imagesDownloadedSuccessFully)+" images downloaded out of "+str(totalImagesInDataSet) +" for the dataset "+str(dataSetId))
+        print("Downloaded the images for the dataset:"+dataSetId)
