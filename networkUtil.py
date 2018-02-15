@@ -25,7 +25,7 @@ def getTheUrl(reqUrl,payLoad={}):
         req = getGetRequest(reqUrl,payLoad)
         return parseRequest(req)
     except Exception as e:
-        print str(e)
+        print(str(e))
         raise e
 
 def postTheUrl(reqUrl,payLoad={}):
@@ -33,7 +33,7 @@ def postTheUrl(reqUrl,payLoad={}):
         req = getPostRequest(reqUrl,payLoad)
         return parseRequest(req)
     except Exception as e:
-        print str(e)
+        print(str(e))
         raise e
 
 def parseRequest(req):
